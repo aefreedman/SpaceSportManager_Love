@@ -24,6 +24,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ]]--
 
+-- units are on the kilo-scale
+
 local ship = {}
 local Vector = require 'lib.hump.vector'
 local tween = require 'lib.tween.tween'
@@ -34,7 +36,7 @@ local Ship_mt = {__index = Ship}
 
 -- Public interface
 
-function ship.new(_x, _y, _mass)
+function ship.new(_x, _y, _mass, _fuel)
 	return setmetatable({ 
 		pos = Vector(_x, _y),
 		v = Vector(0, 0),
@@ -44,17 +46,20 @@ function ship.new(_x, _y, _mass)
 		collider = Collider:addRectangle(_x, _y, 4, 4),
 		target,
 		mass = _mass,
-		power = 3000,
-		pVel = Vector(0, 0)
+		power = 30000000,
+		pVel = Vector(0, 0),
+		fuel = _fuel
 	}, Ship_mt)
 end
 
 function Ship:move(dt)
 	self:calculateDirectionToTarget()
-	self:impulse(1.0)
+	if self.fuel > 0 then
+		self:impulse(1.0, dt)
+	end
 	self.accel = self.f / self.mass * dt
 	self.v = self.v + self.accel * dt
-	self.v = self.v * 0.990 -- damping isn't really the best solution long-term but its the fastest solution short-term; 
+	-- self.v = self.v * 0.990 -- damping isn't really the best solution long-term but its the fastest solution short-term; 
 							--need more logic for making the ship adjust it's thrust to maneuver properly
 	self.pos = self.pos + self.v * dt
 	self.collider:moveTo(self.pos.x, self.pos.y)
@@ -62,8 +67,12 @@ function Ship:move(dt)
 
 end
 
-function Ship:impulse(percentageOfThrust)
+function Ship:impulse(percentageOfThrust, dt)
 	self.f = self.f + self.dir * self.power * percentageOfThrust
+	local fuelUse = 8333 * dt
+	self.fuel = self.fuel - fuelUse
+	self.mass = self.mass - fuelUse
+	print(self.fuel)
 end
 
 function Ship:stop()
@@ -96,7 +105,7 @@ function Ship:calculateDirectionToTarget()
 	local t = Vector(self.target.x, self.target.y)
 	local temp = t - self.pos
 	self.dir = temp:normalized()
-	print('ship-target vector ' .. self.dir.x, self.dir.y)
+	-- print('ship-target vector ' .. self.dir.x, self.dir.y)
 end
 
 return ship

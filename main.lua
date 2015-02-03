@@ -38,6 +38,9 @@ local ship
 shipTargetIndex = 1
 canChange = true
 
+local shipMass = 1000000 + 1800
+local shipFuel = 500000
+
 -- notes
 -- 255 132 121 peach
 -- 205 81 232 purple
@@ -130,7 +133,7 @@ function love.load()
 		planets[i] = Planet:new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), love.math.random(5, 15))
 	end
 
-	ship = Ship.new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), 1)
+	ship = Ship.new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), shipMass, shipFuel)
 
 	ship:setTarget(planets[shipTargetIndex])
 	ship:calculateDirectionToTarget()
