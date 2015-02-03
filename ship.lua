@@ -26,7 +26,6 @@ THE SOFTWARE.
 
 local ship = {}
 local Vector = require 'lib.hump.vector'
--- local Vector = require 'lib.vector'
 local tween = require 'lib.tween.tween'
 -- local xVelTween = tween.new(1, Shi )
 
@@ -45,17 +44,18 @@ function ship.new(_x, _y, _mass)
 		collider = Collider:addRectangle(_x, _y, 4, 4),
 		target,
 		mass = _mass,
-		power = 100000,
-		prevXVel,
-		prevYVel
+		power = 3000,
+		pVel = Vector(0, 0)
 	}, Ship_mt)
 end
 
 function Ship:move(dt)
+	self:calculateDirectionToTarget()
 	self:impulse(1.0)
-
 	self.accel = self.f / self.mass * dt
-	self.v = self.accel * dt
+	self.v = self.v + self.accel * dt
+	self.v = self.v * 0.990 -- damping isn't really the best solution long-term but its the fastest solution short-term; 
+							--need more logic for making the ship adjust it's thrust to maneuver properly
 	self.pos = self.pos + self.v * dt
 	self.collider:moveTo(self.pos.x, self.pos.y)
 	self.f = Vector(0, 0)
@@ -72,16 +72,20 @@ end
 
 function Ship:draw()
 	love.graphics.setColor(255, 132, 121, 255)
-	love.graphics.circle('fill', self.pos.x, self.pos.y, 4)
+	love.graphics.circle('fill', self.pos.x, self.pos.y, 4) -- body
+
 	love.graphics.setColor(0, 255, 125, 155)
-	love.graphics.line(self.pos.x, self.pos.y, self.pos.x + self.v.x, self.pos.y + self.v.y)
+	love.graphics.line(self.pos.x, self.pos.y, self.pos.x + self.v.x, self.pos.y + self.v.y) -- velocity
+	love.graphics.circle('line', self.pos.x + self.v.x, self.pos.y + self.v.y, 4, 8)
+
 	love.graphics.setColor(255, 0, 0, 155)
-	love.graphics.line(self.pos.x, self.pos.y, self.pos.x + self.accel.x, self.pos.y + self.accel.y)
-	-- love.graphics.line(self.x, self.y, self.x + self.xVel, self.y + self.yVel)
+	love.graphics.line(self.pos.x, self.pos.y, self.pos.x + self.accel.x, self.pos.y + self.accel.y) -- accel
 	love.graphics.circle('line', self.pos.x + self.v.x, self.pos.y + self.v.y, 1, 8)
-	if target then
-		love.graphics.circle('line', self.target.x, self.target.y, self.target.r * 2, 16)
-	end
+
+	-- if target then
+	love.graphics.setColor(255, 255, 255)
+		love.graphics.circle('fill', self.target.x, self.target.y, 2, 16)
+	-- end
 end
 
 function Ship:setTarget(location)

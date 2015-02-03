@@ -173,9 +173,14 @@ function love.draw()
    love.timer.sleep(next_time - cur_time)
 end
 
--- function love.keypressed(key, u)
---    --Debug
---    if key == "a" then --set to whatever key you want to use
---       debug.debug()
---    end
--- end
+function love.keypressed(key, u)
+
+	if key == "z" then
+		-- ship:impulse(1.0)
+	end
+
+   --Debug
+   if key == "a" then --set to whatever key you want to use
+      debug.debug()
+   end
+end
