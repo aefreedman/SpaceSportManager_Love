@@ -27,15 +27,17 @@ THE SOFTWARE.
 io.stdout:setvbuf("no")
 
 -- ME stuff
-local Ship = {}
+local Ship = require 'ship'
 local Planet = {}
-local vector = require 'lib/HardonCollider/vector-light'
+-- local vector = require 'lib/HardonCollider/vector-light'
 
 -- Game Variables
 local numberOfPlanets = 4
 local planets = {}
 local ship
-local shipSpeed = 5
+shipSpeed = .5
+shipTargetIndex = 1
+canChange = true
 
 -- notes
 -- 255 132 121 peach
@@ -46,50 +48,7 @@ local shipSpeed = 5
 
 -- SHIP
 
-function Ship:new(_x, _y)
-	newObj = { x = _x, y = _y, xVel = 0, yVel = 0, collider, target }
-	self.__index = self
-	self.collider = Collider:addRectangle(_x, _y, 4, 4)
-	return setmetatable(newObj, self)
-end
 
-function Ship:move(dt)
-	self.x = self.x + self.xVel * dt
-	self.y = self.y + self.yVel * dt
-	self.collider:moveTo(self.x, self.y)
-end
-
-function Ship:stop()
-	if self.xVel == 0 then
-		if self.yVel == 0 then
-			return
-		end
-	end
-	self.xVel = 0
-	self.yVel = 0
-	print('stopping')
-end
-
-function Ship:draw()
-	love.graphics.setColor(255, 132, 121, 255)
-	love.graphics.rectangle('fill', self.x, self.y, 4, 4)
-	love.graphics.setColor(0, 255, 125, 255)
-	love.graphics.circle('line', self.x + self.xVel, self.y + self.yVel, 1, 8)
-	if target then
-		love.graphics.circle('line', self.target.x, self.target.y, self.target.r * 2, 16)
-	end
-end
-
-function Ship:setTarget(location)
-	self.target = location
-end
-
-function Ship:calculateVelocityToTarget()
-	local dx, dy = vector.sub(self.target.x, self.target.y, self.x, self.y)
-	self.xVel = dx / shipSpeed
-	self.yVel = dy / shipSpeed
-	print('ship-target vector ' .. dx, dy)
-end
 -- PLANET
 
 function Planet:new(_x, _y, _r)
@@ -123,13 +82,36 @@ function on_collision(dt, shape_a, shape_b, mtv_x, mtv_y)
 	else
 		return
 	end
+
+	if canChange == false then
+		return
+	end
+
 	ship:stop()
+	if shipTargetIndex < table.getn(planets) then
+		shipTargetIndex = 1 + shipTargetIndex
+	elseif shipTargetIndex == table.getn(planets) then
+		shipTargetIndex = 1
+	end
+
+		ship:setTarget(planets[shipTargetIndex])
+		ship:calculateVelocityToTarget()
+		canChange = false
 
     -- text[#text+1] = string.format("Colliding. mtv = (%s,%s)", mtv_x, mtv_y)
 end
 
 -- this is called when two shapes stop colliding
 function collision_stop(dt, shape_a, shape_b)
+		local other
+	if shape_a == ship.collider then
+		other = shape_a
+	elseif shape_b == ship.collider then
+		other = shape_b
+	else
+		return
+	end
+	canChange = true
     -- text[#text+1] = "Stopped colliding"
 end
 
@@ -146,7 +128,7 @@ function love.load()
 
 	ship = Ship:new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random())
 
-	ship:setTarget(planets[1])
+	ship:setTarget(planets[shipTargetIndex])
 	ship:calculateVelocityToTarget()
 
 
