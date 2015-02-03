@@ -35,7 +35,6 @@ local Planet = {}
 local numberOfPlanets = 4
 local planets = {}
 local ship
-shipSpeed = .5
 shipTargetIndex = 1
 canChange = true
 
@@ -87,7 +86,7 @@ function on_collision(dt, shape_a, shape_b, mtv_x, mtv_y)
 		return
 	end
 
-	ship:stop()
+	-- ship:stop()
 	if shipTargetIndex < table.getn(planets) then
 		shipTargetIndex = 1 + shipTargetIndex
 	elseif shipTargetIndex == table.getn(planets) then
@@ -95,7 +94,7 @@ function on_collision(dt, shape_a, shape_b, mtv_x, mtv_y)
 	end
 
 		ship:setTarget(planets[shipTargetIndex])
-		ship:calculateVelocityToTarget()
+		ship:calculateDirectionToTarget()
 		canChange = false
 
     -- text[#text+1] = string.format("Colliding. mtv = (%s,%s)", mtv_x, mtv_y)
@@ -117,6 +116,11 @@ end
 
 -- LOVE stuff					
 function love.load()
+
+	min_dt = 1/60
+	next_time = love.timer.getTime()
+
+
 	love.window.setTitle("Space Sport Manager")
     love.window.setMode(800, 600, {resizable=true, vsync=false, minwidth=400, minheight=300})
 
@@ -126,15 +130,16 @@ function love.load()
 		planets[i] = Planet:new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), love.math.random(5, 15))
 	end
 
-	ship = Ship:new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random())
+	ship = Ship.new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), 1)
 
 	ship:setTarget(planets[shipTargetIndex])
-	ship:calculateVelocityToTarget()
+	ship:calculateDirectionToTarget()
 
 
 end
 
 function love.update(dt)
+	next_time = next_time + min_dt
 	ship:move(dt)
 
     -- check for collisions
@@ -143,6 +148,8 @@ function love.update(dt)
     while #text > 40 do
         table.remove(text, 1)
     end
+
+	love.window.setTitle("Space Sport Manager " .. love.timer.getFPS())
 end
 
 function love.draw()
@@ -157,4 +164,18 @@ function love.draw()
         love.graphics.setColor(255,255,255, 255 - (i-1) * 6)
         love.graphics.print(text[#text - (i-1)], 10, i * 15)
     end
+
+   local cur_time = love.timer.getTime()
+   if next_time <= cur_time then
+      next_time = cur_time
+      return
+   end
+   love.timer.sleep(next_time - cur_time)
 end
+
+-- function love.keypressed(key, u)
+--    --Debug
+--    if key == "a" then --set to whatever key you want to use
+--       debug.debug()
+--    end
+-- end
