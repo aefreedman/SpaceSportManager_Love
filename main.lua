@@ -25,7 +25,7 @@ THE SOFTWARE.
 ]]--
 
 io.stdout:setvbuf("no")
-
+local Vector = require 'lib.hump.vector'
 -- ME stuff
 local Ship = require 'ship'
 local Planet = {}
@@ -37,9 +37,8 @@ local planets = {}
 local ship
 shipTargetIndex = 1
 canChange = true
+meterToPixelRatio = 250 -- :1
 
-local shipMass = 1000000 + 1800
-local shipFuel = 500000
 
 -- notes
 -- 255 132 121 peach
@@ -125,7 +124,7 @@ function love.load()
 
 
 	love.window.setTitle("Space Sport Manager")
-    love.window.setMode(800, 600, {resizable=true, vsync=false, minwidth=400, minheight=300})
+    love.window.setMode(1280, 720, {resizable=true, vsync=false, minwidth=400, minheight=300})
 
 	Collider = HC(100, on_collision, collision_stop)
 
@@ -133,10 +132,13 @@ function love.load()
 		planets[i] = Planet:new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), love.math.random(5, 15))
 	end
 
-	ship = Ship.new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), shipMass, shipFuel)
-
-	ship:setTarget(planets[shipTargetIndex])
+	-- ship = Ship.new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), shipMass, shipFuel)
+	ship = Ship.new(50, 50)
+	ship:setTarget(Vector(love.window.getWidth(), love.window.getHeight()))
 	ship:calculateDirectionToTarget()
+
+	-- ship:setTarget(planets[shipTargetIndex])
+	-- ship:calculateDirectionToTarget()
 
 
 end
@@ -166,6 +168,15 @@ function love.draw()
     for i = 1,#text do
         love.graphics.setColor(255,255,255, 255 - (i-1) * 6)
         love.graphics.print(text[#text - (i-1)], 10, i * 15)
+    end
+
+    love.graphics.setColor(0, 255, 0, 55)
+    for i=1,love.graphics.getHeight()/40 + 1 do
+    	love.graphics.line(0, 40 * i, love.graphics.getWidth(), 40 * i)
+    end
+
+    for i=1,love.graphics.getWidth()/40 + 1 do
+    	love.graphics.line(40 * i, 0, 40 * i, love.graphics.getHeight())
     end
 
    local cur_time = love.timer.getTime()

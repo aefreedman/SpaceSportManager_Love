@@ -34,9 +34,19 @@ local tween = require 'lib.tween.tween'
 local Ship = {}
 local Ship_mt = {__index = Ship}
 
+local emptyMass = 40100
+local payloadMass = 0
+local grossMass = 496200
+local ratedThrust = 4400 * 1000 -- kN * 1000 = N
+local specificImpulse = 421 -- seconds
+local burnTime = 360
+local flowRate = 240.7255 -- kg/sec
+local numberOfEngines = 5
+local time = 0
+
 -- Public interface
 
-function ship.new(_x, _y, _mass, _fuel)
+function ship.new(_x, _y)
 	return setmetatable({ 
 		pos = Vector(_x, _y),
 		v = Vector(0, 0),
@@ -45,34 +55,45 @@ function ship.new(_x, _y, _mass, _fuel)
 		dir = Vector(0, 0),
 		collider = Collider:addRectangle(_x, _y, 4, 4),
 		target,
-		mass = _mass,
-		power = 30000000,
+		-- mass = _mass,
+		mass = grossMass,
+
+		power = ratedThrust,
 		pVel = Vector(0, 0),
-		fuel = _fuel
+		fuel = grossMass - payloadMass - emptyMass
 	}, Ship_mt)
 end
 
 function Ship:move(dt)
-	self:calculateDirectionToTarget()
+	-- self:calculateDirectionToTarget()
 	if self.fuel > 0 then
-		self:impulse(1.0, dt)
+		self:impulse(1, dt)
+	else
+		print(self.v:len() .. ' m/s')
 	end
-	self.accel = self.f / self.mass * dt
+	self.accel = self.f / self.mass
 	self.v = self.v + self.accel * dt
-	-- self.v = self.v * 0.990 -- damping isn't really the best solution long-term but its the fastest solution short-term; 
-							--need more logic for making the ship adjust it's thrust to maneuver properly
-	self.pos = self.pos + self.v * dt
+	self.pos = self.pos + self.v * dt / meterToPixelRatio
+
+	print(self.mass .. ' -' .. self.accel:len() .. ' m/s^2 ' .. self.v:len() .. ' m/s')
+
 	self.collider:moveTo(self.pos.x, self.pos.y)
+
+
 	self.f = Vector(0, 0)
+	self.accel = Vector(0, 0)
 
 end
 
-function Ship:impulse(percentageOfThrust, dt)
-	self.f = self.f + self.dir * self.power * percentageOfThrust
-	local fuelUse = 8333 * dt
+function Ship:impulse(percent, dt)
+	local fuelUse = flowRate * dt * percent * numberOfEngines
 	self.fuel = self.fuel - fuelUse
 	self.mass = self.mass - fuelUse
-	print(self.fuel)
+	self.f = self.f + self.dir * self.power * percent
+	-- self.f = self.dir * (self.mass())
+
+
+	-- print(self.mass .. ' -' .. fuelUse .. ' kg ' .. self.v:len() .. ' m/s')
 end
 
 function Ship:stop()
@@ -81,15 +102,15 @@ end
 
 function Ship:draw()
 	love.graphics.setColor(255, 132, 121, 255)
-	love.graphics.circle('fill', self.pos.x, self.pos.y, 4) -- body
+	love.graphics.circle('fill', self.pos.x, self.pos.y, 1) -- body
 
-	love.graphics.setColor(0, 255, 125, 155)
-	love.graphics.line(self.pos.x, self.pos.y, self.pos.x + self.v.x, self.pos.y + self.v.y) -- velocity
-	love.graphics.circle('line', self.pos.x + self.v.x, self.pos.y + self.v.y, 4, 8)
+	-- love.graphics.setColor(0, 255, 125, 155)
+	-- love.graphics.line(self.pos.x, self.pos.y, self.pos.x + self.v.x, self.pos.y + self.v.y) -- velocity
+	-- love.graphics.circle('line', self.pos.x + self.v.x, self.pos.y + self.v.y, 4, 8)
 
-	love.graphics.setColor(255, 0, 0, 155)
-	love.graphics.line(self.pos.x, self.pos.y, self.pos.x + self.accel.x, self.pos.y + self.accel.y) -- accel
-	love.graphics.circle('line', self.pos.x + self.v.x, self.pos.y + self.v.y, 1, 8)
+	-- love.graphics.setColor(255, 0, 0, 155)
+	-- love.graphics.line(self.pos.x, self.pos.y, self.pos.x + self.accel.x, self.pos.y + self.accel.y) -- accel
+	-- love.graphics.circle('line', self.pos.x + self.v.x, self.pos.y + self.v.y, 1, 8)
 
 	-- if target then
 	love.graphics.setColor(255, 255, 255)

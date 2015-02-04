@@ -1,0 +1,10 @@
+Saturn V S-II Setup
+
+local emptyMass = 40100
+local payloadMass = 123000
+local grossMass = 496200
+local ratedThrust = 4400 * 1000 -- kN * 1000 = N
+local specificImpulse = 421 -- seconds
+local burnTime = 360
+local flowRate = 240.7255 -- kg/sec
+local numberOfEngines = 5
