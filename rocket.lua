@@ -26,13 +26,13 @@ THE SOFTWARE.
 
 -- units are on the kilo-scale
 
-local ship = {}
+local rocket = {}
 local Vector = require 'lib.hump.vector'
 local tween = require 'lib.tween.tween'
 -- local xVelTween = tween.new(1, Shi )
 
-local Ship = {}
-local Ship_mt = {__index = Ship}
+local Rocket = {}
+local Rocket_mt = {__index = Rocket}
 
 local emptyMass = 40100
 local payloadMass = 0
@@ -40,13 +40,13 @@ local grossMass = 496200
 local ratedThrust = 4400 * 1000 -- kN * 1000 = N
 local specificImpulse = 421 -- seconds
 local burnTime = 360
-local flowRate = 240.7255 -- kg/sec
+local flowRate = 250.7255 -- kg/sec
 local numberOfEngines = 5
 local time = 0
 
 -- Public interface
 
-function ship.new(_x, _y)
+function rocket.new(_x, _y)
 	return setmetatable({ 
 		pos = Vector(_x, _y),
 		v = Vector(0, 0),
@@ -61,13 +61,13 @@ function ship.new(_x, _y)
 		power = ratedThrust,
 		pVel = Vector(0, 0),
 		fuel = grossMass - payloadMass - emptyMass
-	}, Ship_mt)
+	}, Rocket_mt)
 end
 
-function Ship:move(dt)
+function Rocket:move(dt)
 	-- self:calculateDirectionToTarget()
 	if self.fuel > 0 then
-		self:impulse(1, dt)
+		self:impulse(10, dt)
 	else
 		print(self.v:len() .. ' m/s')
 	end
@@ -85,7 +85,7 @@ function Ship:move(dt)
 
 end
 
-function Ship:impulse(percent, dt)
+function Rocket:impulse(percent, dt)
 	local fuelUse = flowRate * dt * percent * numberOfEngines
 	self.fuel = self.fuel - fuelUse
 	self.mass = self.mass - fuelUse
@@ -96,11 +96,11 @@ function Ship:impulse(percent, dt)
 	-- print(self.mass .. ' -' .. fuelUse .. ' kg ' .. self.v:len() .. ' m/s')
 end
 
-function Ship:stop()
+function Rocket:stop()
 
 end
 
-function Ship:draw()
+function Rocket:draw()
 	love.graphics.setColor(255, 132, 121, 255)
 	love.graphics.circle('fill', self.pos.x, self.pos.y, 1) -- body
 
@@ -118,15 +118,15 @@ function Ship:draw()
 	-- end
 end
 
-function Ship:setTarget(location)
+function Rocket:setTarget(location)
 	self.target = location
 end
 
-function Ship:calculateDirectionToTarget()
+function Rocket:calculateDirectionToTarget()
 	local t = Vector(self.target.x, self.target.y)
 	local temp = t - self.pos
 	self.dir = temp:normalized()
-	-- print('ship-target vector ' .. self.dir.x, self.dir.y)
+	-- print('rocket-target vector ' .. self.dir.x, self.dir.y)
 end
 
-return ship
+return rocket

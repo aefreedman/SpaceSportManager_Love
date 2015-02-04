@@ -27,17 +27,18 @@ THE SOFTWARE.
 io.stdout:setvbuf("no")
 local Vector = require 'lib.hump.vector'
 -- ME stuff
-local Ship = require 'ship'
+local Rocket = require 'rocket'
 local Planet = {}
 -- local vector = require 'lib/HardonCollider/vector-light'
 
 -- Game Variables
 local numberOfPlanets = 4
 local planets = {}
-local ship
-shipTargetIndex = 1
+local rocket
+rocketTargetIndex = 1
 canChange = true
 meterToPixelRatio = 250 -- :1
+local drawGrid = true
 
 
 -- notes
@@ -76,9 +77,9 @@ local text = {}
 -- this is called when two shapes collide
 function on_collision(dt, shape_a, shape_b, mtv_x, mtv_y)
 	local other
-	if shape_a == ship.collider then
+	if shape_a == rocket.collider then
 		other = shape_a
-	elseif shape_b == ship.collider then
+	elseif shape_b == rocket.collider then
 		other = shape_b
 	else
 		return
@@ -88,15 +89,15 @@ function on_collision(dt, shape_a, shape_b, mtv_x, mtv_y)
 		return
 	end
 
-	-- ship:stop()
-	if shipTargetIndex < table.getn(planets) then
-		shipTargetIndex = 1 + shipTargetIndex
-	elseif shipTargetIndex == table.getn(planets) then
-		shipTargetIndex = 1
+	-- rocket:stop()
+	if rocketTargetIndex < table.getn(planets) then
+		rocketTargetIndex = 1 + rocketTargetIndex
+	elseif rocketTargetIndex == table.getn(planets) then
+		rocketTargetIndex = 1
 	end
 
-		ship:setTarget(planets[shipTargetIndex])
-		ship:calculateDirectionToTarget()
+		rocket:setTarget(planets[rocketTargetIndex])
+		rocket:calculateDirectionToTarget()
 		canChange = false
 
     -- text[#text+1] = string.format("Colliding. mtv = (%s,%s)", mtv_x, mtv_y)
@@ -105,9 +106,9 @@ end
 -- this is called when two shapes stop colliding
 function collision_stop(dt, shape_a, shape_b)
 		local other
-	if shape_a == ship.collider then
+	if shape_a == rocket.collider then
 		other = shape_a
-	elseif shape_b == ship.collider then
+	elseif shape_b == rocket.collider then
 		other = shape_b
 	else
 		return
@@ -119,7 +120,7 @@ end
 -- LOVE stuff					
 function love.load()
 
-	min_dt = 1/60
+	min_dt = 1/120
 	next_time = love.timer.getTime()
 
 
@@ -132,20 +133,16 @@ function love.load()
 		planets[i] = Planet:new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), love.math.random(5, 15))
 	end
 
-	-- ship = Ship.new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), shipMass, shipFuel)
-	ship = Ship.new(50, 50)
-	ship:setTarget(Vector(love.window.getWidth(), love.window.getHeight()))
-	ship:calculateDirectionToTarget()
-
-	-- ship:setTarget(planets[shipTargetIndex])
-	-- ship:calculateDirectionToTarget()
+	rocket = Rocket.new(50, 50)
+	rocket:setTarget(Vector(love.window.getWidth(), love.window.getHeight()))
+	rocket:calculateDirectionToTarget()
 
 
 end
 
 function love.update(dt)
 	next_time = next_time + min_dt
-	ship:move(dt)
+	rocket:move(dt)
 
     -- check for collisions
     Collider:update(dt)
@@ -154,11 +151,11 @@ function love.update(dt)
         table.remove(text, 1)
     end
 
-	love.window.setTitle("Space Sport Manager " .. love.timer.getFPS())
+	love.window.setTitle("Space Sport Manager | fps:" .. love.timer.getFPS())
 end
 
 function love.draw()
-	ship:draw()
+	rocket:draw()
 
 	for k,v in pairs(planets) do
 		v:draw()
@@ -170,13 +167,8 @@ function love.draw()
         love.graphics.print(text[#text - (i-1)], 10, i * 15)
     end
 
-    love.graphics.setColor(0, 255, 0, 55)
-    for i=1,love.graphics.getHeight()/40 + 1 do
-    	love.graphics.line(0, 40 * i, love.graphics.getWidth(), 40 * i)
-    end
-
-    for i=1,love.graphics.getWidth()/40 + 1 do
-    	love.graphics.line(40 * i, 0, 40 * i, love.graphics.getHeight())
+    if drawGrid then
+    	DrawGrid()
     end
 
    local cur_time = love.timer.getTime()
@@ -190,11 +182,26 @@ end
 function love.keypressed(key, u)
 
 	if key == "z" then
-		-- ship:impulse(1.0)
+		-- rocket:impulse(1.0)
+	end
+
+	if key == "g" then
+		drawGrid = not drawGrid
 	end
 
    --Debug
    if key == "a" then --set to whatever key you want to use
       debug.debug()
    end
+end
+
+function DrawGrid()
+    love.graphics.setColor(0, 255, 0, 55)
+    for i=1,love.graphics.getHeight()/40 + 1 do
+    	love.graphics.line(0, 40 * i, love.graphics.getWidth(), 40 * i)
+    end
+
+    for i=1,love.graphics.getWidth()/40 + 1 do
+    	love.graphics.line(40 * i, 0, 40 * i, love.graphics.getHeight())
+    end
 end
