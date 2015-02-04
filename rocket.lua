@@ -56,46 +56,45 @@ function rocket.new(_x, _y)
 		target,
 		-- mass = _mass,
 		mass = grossMass,
-
+		prevAccel = Vector(0, 0), -- for saving info
 		power = ratedThrust,
 		pVel = Vector(0, 0),
-		fuel = grossMass - payloadMass - emptyMass
+		fuel = grossMass - payloadMass - emptyMass,
+		remainingBurnTime = burnTime
 	}, Rocket_mt)
 end
 
 function Rocket:update(dt)
 	self:move(dt)
+	self.remainingBurnTime = self.fuel / (flowRate * numberOfEngines)
 end
 
 function Rocket:move(dt)
 	-- self:calculateDirectionToTarget()
 	if self.fuel > 0 then
-		self:impulse(10, dt)
+		self:impulse(1, dt)
 	end
 	self.accel = self.f / self.mass
+	self.prevAccel = self.accel
 	self.v = self.v + self.accel * dt
 	self.pos = self.pos + self.v * dt / meterToPixelRatio
 
 	if debug then
-		print(self.mass .. ' -' .. self.accel:len() .. ' m/s^2 ' .. self.v:len() .. ' m/s')
+		print(string.format("%.2f", self.mass) .. ' -' .. string.format("%.2f", self.accel:len()) .. ' m/s^2 ' .. string.format("%.2f", self.v:len()) .. ' m/s')
 	end
 	self.collider:moveTo(self.pos.x, self.pos.y)
 
 
-	self.f = Vector(0, 0)
-	self.accel = Vector(0, 0)
+	-- self.f = Vector(0, 0)
+	-- self.accel = Vector(0, 0)
 
 end
 
-function Rocket:impulse(percent, dt)
-	local fuelUse = flowRate * dt * percent * numberOfEngines
+function Rocket:impulse(throttle, dt)
+	fuelUse = flowRate * dt * throttle * numberOfEngines
 	self.fuel = self.fuel - fuelUse
 	self.mass = self.mass - fuelUse
-	self.f = self.f + self.dir * self.power * percent
-	-- self.f = self.dir * (self.mass())
-
-
-	-- print(self.mass .. ' -' .. fuelUse .. ' kg ' .. self.v:len() .. ' m/s')
+	self.f = self.dir * self.power * throttle
 end
 
 function Rocket:stop()
@@ -116,7 +115,7 @@ function Rocket:draw()
 
 	-- if target then
 	love.graphics.setColor(255, 255, 255)
-		love.graphics.circle('fill', self.target.x, self.target.y, 2, 16)
+	love.graphics.circle('fill', self.target.x, self.target.y, 2, 16)
 	-- end
 end
 

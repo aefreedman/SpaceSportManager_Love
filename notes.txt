@@ -1,10 +1,18 @@
 Saturn V S-II Setup
 
 local emptyMass = 40100
-local payloadMass = 123000
+local payloadMass = 0
 local grossMass = 496200
 local ratedThrust = 4400 * 1000 -- kN * 1000 = N
 local specificImpulse = 421 -- seconds
 local burnTime = 360
 local flowRate = 240.7255 -- kg/sec
 local numberOfEngines = 5
+
+Colors
+-- notes
+-- 255 132 121 peach
+-- 205 81 232 purple
+-- 79 88 255 blue
+-- 81 216 232 light blue 
+-- 96 255 130 green

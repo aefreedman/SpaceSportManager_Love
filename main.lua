@@ -24,31 +24,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ]]--
 
+-- Enables concurrent stdout
 io.stdout:setvbuf("no")
-local Vector = require 'lib.hump.vector'
--- ME stuff
-local Rocket = require 'rocket'
-local Planet = {}
-local Camera = require 'lib.hump.camera'
--- local vector = require 'lib/HardonCollider/vector-light'
 
--- Game Variables
-local numberOfPlanets = 40
-local planets = {}
-local rocket
+-- Dependencies
+local Vector = require 'lib.hump.vector'
+local Rocket = require 'rocket'
+local Camera = require 'lib.hump.camera'
+local HC = require 'lib/hardoncollider'
+
+-- Globals
 rocketTargetIndex = 1
 canChange = true
 meterToPixelRatio = 250 -- :1
-local drawGrid = true
-debug = true
+debug = false
 elapsedTime = 0
+
+-- Game Variables
+local Planet = {}
+local text = {}
+local planets = {}
+local rocket
+
+local numberOfPlanets = 40
+local drawGrid = false
 local zoom = 1
--- notes
--- 255 132 121 peach
--- 205 81 232 purple
--- 79 88 255 blue
--- 81 216 232 light blue 
--- 96 255 130 green
+
 
 -- SHIP
 
@@ -70,11 +71,102 @@ function Planet:draw()
 end
 
 
+-- LOVE stuff					
+function love.load()
 
--- Collision
+	min_dt = 1/60
+	next_time = love.timer.getTime()
 
-HC = require 'lib/hardoncollider'
-local text = {}
+
+	love.window.setTitle("Space Sport Manager")
+    love.window.setMode(1280, 720, {resizable=true, vsync=false, minwidth=400, minheight=300})
+
+	Collider = HC(100, on_collision, collision_stop)
+
+	for i = 1 , numberOfPlanets do
+		planets[i] = Planet:new(love.window.getWidth() * love.math.random(-200, 200) / 100, love.window.getHeight() * love.math.random(-200, 200) / 100, love.math.random(5, 20))
+	end
+
+	rocket = Rocket.new(50, 50)
+	rocket:setTarget(Vector(love.window.getWidth(), love.window.getHeight()))
+	rocket:calculateDirectionToTarget()
+	cam = Camera(100, 100, zoom, 0)
+
+end
+
+function love.update(dt)
+	next_time = next_time + min_dt
+	elapsedTime = elapsedTime + dt
+	rocket:update(dt)
+
+    -- check for collisions
+    Collider:update(dt)
+
+    while #text > 40 do
+        table.remove(text, 1)
+    end
+
+	love.window.setTitle("Space Sport Manager | fps:" .. love.timer.getFPS() .. " | " .. string.format("%.2f", elapsedTime))
+end
+
+-- DRAW REGION
+
+function love.draw()
+	cam:lookAt(rocket.pos.x, rocket.pos.y)
+	cam:draw(drawWorld)
+	drawGUI()
+
+   local cur_time = love.timer.getTime()
+   if next_time <= cur_time then
+      next_time = cur_time
+      return
+   end
+   love.timer.sleep(next_time - cur_time)
+
+end
+
+function drawWorld()
+	rocket:draw()
+
+	for k,v in pairs(planets) do
+		v:draw()
+	end
+end
+
+function drawGUI()
+    if drawGrid then
+    	DrawGrid()
+    end
+
+    -- outputs info about the rocket
+    love.graphics.setColor(0, 255, 0, 255)
+    love.graphics.print(
+    	"pos=<" ..string.format("%.0f", rocket.pos.x) .. ', ' .. string.format("%.0f",rocket.pos.y) ..
+    	">, mass=" .. string.format("%.0f", rocket.mass) ..
+    	'kg, accel=' .. string.format("%.2f", rocket.accel:len()) ..
+    	' m/s^2, vel=' .. string.format("%.2f", rocket.v:len()) .. ' m/s' ..
+    	' remaining burn time = ' .. string.format("%.2f", rocket.remainingBurnTime) .. "s"
+    	)
+
+    -- print messages
+    for i = 1,#text do
+        love.graphics.setColor(255,255,255, 255 - (i-1) * 6)
+        love.graphics.print(text[#text - (i-1)], 10, i * 15)
+    end
+end
+
+function DrawGrid()
+    love.graphics.setColor(0, 255, 0, 55)
+    for i=1,love.graphics.getHeight()/40/zoom + 1 do
+    	love.graphics.line(0, 40*zoom * i, love.graphics.getWidth(), 40*zoom * i)
+    end
+
+    for i=1,love.graphics.getWidth()/40/zoom + 1 do
+    	love.graphics.line(40*zoom * i, 0, 40*zoom * i, love.graphics.getHeight())
+    end
+end
+
+-- COLLISION LOGIC
 
 -- this is called when two shapes collide
 function on_collision(dt, shape_a, shape_b, mtv_x, mtv_y)
@@ -119,77 +211,7 @@ function collision_stop(dt, shape_a, shape_b)
     -- text[#text+1] = "Stopped colliding"
 end
 
--- LOVE stuff					
-function love.load()
-
-	min_dt = 1/120
-	next_time = love.timer.getTime()
-
-
-	love.window.setTitle("Space Sport Manager")
-    love.window.setMode(1280, 720, {resizable=true, vsync=false, minwidth=400, minheight=300})
-
-	Collider = HC(100, on_collision, collision_stop)
-
-	for i = 1 , numberOfPlanets do
-		planets[i] = Planet:new(love.window.getWidth() * love.math.random(), love.window.getHeight() * love.math.random(), love.math.random(5, 15))
-	end
-
-	rocket = Rocket.new(50, 50)
-	rocket:setTarget(Vector(love.window.getWidth(), love.window.getHeight()))
-	rocket:calculateDirectionToTarget()
-	cam = Camera(100, 100, zoom, 0)
-
-end
-
-function love.update(dt)
-	next_time = next_time + min_dt
-	elapsedTime = elapsedTime + dt
-	rocket:update(dt)
-
-    -- check for collisions
-    Collider:update(dt)
-
-    while #text > 40 do
-        table.remove(text, 1)
-    end
-
-	love.window.setTitle("Space Sport Manager | fps:" .. love.timer.getFPS() .. " | " .. string.format("%g", elapsedTime))
-end
-
-function love.draw()
-	cam:lookAt(rocket.pos.x, rocket.pos.y)
-	cam:draw(drawWorld)
-	drawGUI()
-
-   local cur_time = love.timer.getTime()
-   if next_time <= cur_time then
-      next_time = cur_time
-      return
-   end
-   love.timer.sleep(next_time - cur_time)
-
-end
-
-function drawWorld()
-	rocket:draw()
-
-	for k,v in pairs(planets) do
-		v:draw()
-	end
-end
-
-function drawGUI()
-    if drawGrid then
-    	DrawGrid()
-    end
-
-    	    -- print messages
-    for i = 1,#text do
-        love.graphics.setColor(255,255,255, 255 - (i-1) * 6)
-        love.graphics.print(text[#text - (i-1)], 10, i * 15)
-    end
-end
+-- CONTROL REGION --
 
 function love.keypressed(key, u)
 
@@ -221,13 +243,4 @@ function love.keypressed(key, u)
    end
 end
 
-function DrawGrid()
-    love.graphics.setColor(0, 255, 0, 55)
-    for i=1,love.graphics.getHeight()/40/zoom + 1 do
-    	love.graphics.line(0, 40*zoom * i, love.graphics.getWidth(), 40*zoom * i)
-    end
 
-    for i=1,love.graphics.getWidth()/40/zoom + 1 do
-    	love.graphics.line(40*zoom * i, 0, 40*zoom * i, love.graphics.getHeight())
-    end
-end
