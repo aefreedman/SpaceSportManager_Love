@@ -29,18 +29,20 @@ local Vector = require 'lib.hump.vector'
 -- ME stuff
 local Rocket = require 'rocket'
 local Planet = {}
+local Camera = require 'lib.hump.camera'
 -- local vector = require 'lib/HardonCollider/vector-light'
 
 -- Game Variables
-local numberOfPlanets = 4
+local numberOfPlanets = 40
 local planets = {}
 local rocket
 rocketTargetIndex = 1
 canChange = true
 meterToPixelRatio = 250 -- :1
 local drawGrid = true
-
-
+debug = true
+elapsedTime = 0
+local zoom = 1
 -- notes
 -- 255 132 121 peach
 -- 205 81 232 purple
@@ -136,13 +138,14 @@ function love.load()
 	rocket = Rocket.new(50, 50)
 	rocket:setTarget(Vector(love.window.getWidth(), love.window.getHeight()))
 	rocket:calculateDirectionToTarget()
-
+	cam = Camera(100, 100, zoom, 0)
 
 end
 
 function love.update(dt)
 	next_time = next_time + min_dt
-	rocket:move(dt)
+	elapsedTime = elapsedTime + dt
+	rocket:update(dt)
 
     -- check for collisions
     Collider:update(dt)
@@ -151,25 +154,13 @@ function love.update(dt)
         table.remove(text, 1)
     end
 
-	love.window.setTitle("Space Sport Manager | fps:" .. love.timer.getFPS())
+	love.window.setTitle("Space Sport Manager | fps:" .. love.timer.getFPS() .. " | " .. string.format("%g", elapsedTime))
 end
 
 function love.draw()
-	rocket:draw()
-
-	for k,v in pairs(planets) do
-		v:draw()
-	end
-
-	    -- print messages
-    for i = 1,#text do
-        love.graphics.setColor(255,255,255, 255 - (i-1) * 6)
-        love.graphics.print(text[#text - (i-1)], 10, i * 15)
-    end
-
-    if drawGrid then
-    	DrawGrid()
-    end
+	cam:lookAt(rocket.pos.x, rocket.pos.y)
+	cam:draw(drawWorld)
+	drawGUI()
 
    local cur_time = love.timer.getTime()
    if next_time <= cur_time then
@@ -177,6 +168,27 @@ function love.draw()
       return
    end
    love.timer.sleep(next_time - cur_time)
+
+end
+
+function drawWorld()
+	rocket:draw()
+
+	for k,v in pairs(planets) do
+		v:draw()
+	end
+end
+
+function drawGUI()
+    if drawGrid then
+    	DrawGrid()
+    end
+
+    	    -- print messages
+    for i = 1,#text do
+        love.graphics.setColor(255,255,255, 255 - (i-1) * 6)
+        love.graphics.print(text[#text - (i-1)], 10, i * 15)
+    end
 end
 
 function love.keypressed(key, u)
@@ -185,8 +197,22 @@ function love.keypressed(key, u)
 		-- rocket:impulse(1.0)
 	end
 
+	if key == "d" then
+		debug = not debug
+	end
+
 	if key == "g" then
 		drawGrid = not drawGrid
+	end
+
+	if key == "-" then
+		zoom = zoom / 2
+		cam:zoom(0.5)
+	end
+
+	if key == "=" then
+		zoom = zoom * 2
+		cam:zoom(2)
 	end
 
    --Debug
@@ -197,11 +223,11 @@ end
 
 function DrawGrid()
     love.graphics.setColor(0, 255, 0, 55)
-    for i=1,love.graphics.getHeight()/40 + 1 do
-    	love.graphics.line(0, 40 * i, love.graphics.getWidth(), 40 * i)
+    for i=1,love.graphics.getHeight()/40/zoom + 1 do
+    	love.graphics.line(0, 40*zoom * i, love.graphics.getWidth(), 40*zoom * i)
     end
 
-    for i=1,love.graphics.getWidth()/40 + 1 do
-    	love.graphics.line(40 * i, 0, 40 * i, love.graphics.getHeight())
+    for i=1,love.graphics.getWidth()/40/zoom + 1 do
+    	love.graphics.line(40*zoom * i, 0, 40*zoom * i, love.graphics.getHeight())
     end
 end

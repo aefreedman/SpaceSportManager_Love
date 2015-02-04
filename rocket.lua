@@ -40,9 +40,8 @@ local grossMass = 496200
 local ratedThrust = 4400 * 1000 -- kN * 1000 = N
 local specificImpulse = 421 -- seconds
 local burnTime = 360
-local flowRate = 250.7255 -- kg/sec
+local flowRate = 240.7255 -- kg/sec
 local numberOfEngines = 5
-local time = 0
 
 -- Public interface
 
@@ -64,19 +63,22 @@ function rocket.new(_x, _y)
 	}, Rocket_mt)
 end
 
+function Rocket:update(dt)
+	self:move(dt)
+end
+
 function Rocket:move(dt)
 	-- self:calculateDirectionToTarget()
 	if self.fuel > 0 then
 		self:impulse(10, dt)
-	else
-		print(self.v:len() .. ' m/s')
 	end
 	self.accel = self.f / self.mass
 	self.v = self.v + self.accel * dt
 	self.pos = self.pos + self.v * dt / meterToPixelRatio
 
-	print(self.mass .. ' -' .. self.accel:len() .. ' m/s^2 ' .. self.v:len() .. ' m/s')
-
+	if debug then
+		print(self.mass .. ' -' .. self.accel:len() .. ' m/s^2 ' .. self.v:len() .. ' m/s')
+	end
 	self.collider:moveTo(self.pos.x, self.pos.y)
 
 
