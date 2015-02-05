@@ -46,7 +46,7 @@ local text = {}
 local planets = {}
 local rocket
 
-local numberOfPlanets = 40
+local numberOfPlanets = 4
 local drawGrid = false
 local zoom = 1
 
@@ -84,11 +84,14 @@ function love.load()
 	Collider = HC(100, on_collision, collision_stop)
 
 	for i = 1 , numberOfPlanets do
-		planets[i] = Planet:new(love.window.getWidth() * love.math.random(-200, 200) / 100, love.window.getHeight() * love.math.random(-200, 200) / 100, love.math.random(5, 20))
+		-- planets[i] = Planet:new(love.window.getWidth() * love.math.random(-200, 200) / 100, love.window.getHeight() * love.math.random(-200, 200) / 100, love.math.random(5, 20))
+		planets[i] = Planet:new(love.window.getWidth() * love.math.random(-200, 200) / 800, love.window.getHeight() * love.math.random(-200, 200) / 800, love.math.random(5, 20))
+
 	end
 
 	rocket = Rocket.new(50, 50)
-	rocket:setTarget(Vector(love.window.getWidth(), love.window.getHeight()))
+	-- rocket:setTarget(Vector(love.window.getWidth(), love.window.getHeight()))
+	rocket:setTarget(planets[1])
 	rocket:calculateDirectionToTarget()
 	cam = Camera(100, 100, zoom, 0)
 
@@ -97,10 +100,16 @@ end
 function love.update(dt)
 	next_time = next_time + min_dt
 	elapsedTime = elapsedTime + dt
+
+    checkKeyDown(dt)
+
+
 	rocket:update(dt)
 
     -- check for collisions
     Collider:update(dt)
+
+
 
     while #text > 40 do
         table.remove(text, 1)
@@ -142,10 +151,12 @@ function drawGUI()
     love.graphics.setColor(0, 255, 0, 255)
     love.graphics.print(
     	"pos=<" ..string.format("%.0f", rocket.pos.x) .. ', ' .. string.format("%.0f",rocket.pos.y) ..
-    	">, mass=" .. string.format("%.0f", rocket.mass) ..
+    	">, fuel mass rem. =" .. string.format("%.0f", rocket.fuel) ..
     	'kg, accel=' .. string.format("%.2f", rocket.accel:len()) ..
     	' m/s^2, vel=' .. string.format("%.2f", rocket.v:len()) .. ' m/s' ..
-    	' remaining burn time = ' .. string.format("%.2f", rocket.remainingBurnTime) .. "s"
+    	' remaining burn time = ' .. string.format("%.2f", rocket.remainingBurnTime) .. "s" ..
+    	-- ' fuel use = ' .. string.format("%.2f", rocket.fuelUse) ..
+    	' -- throttle =' .. string.format("%.2f", rocket.throttle)
     	)
 
     -- print messages
@@ -213,6 +224,20 @@ end
 
 -- CONTROL REGION --
 
+function checkKeyDown(dt)
+	if love.keyboard.isDown('[') then
+		rocket.throttle = rocket.throttle - 0.01
+	end
+
+	if love.keyboard.isDown(']') then
+		rocket.throttle = rocket.throttle + 0.01
+	end
+
+	if love.keyboard.isDown(' ') then
+		rocket:airbrake(dt)
+	end
+end
+
 function love.keypressed(key, u)
 
 	if key == "z" then
@@ -235,6 +260,22 @@ function love.keypressed(key, u)
 	if key == "=" then
 		zoom = zoom * 2
 		cam:zoom(2)
+	end
+
+	-- if key == "[" then
+	-- 	rocket.throttle = rocket.throttle - 0.01
+	-- end
+
+	-- if key == "]" then
+	-- 	rocket.throttle = rocket.throttle + 0.01
+	-- end
+
+	if key == "0" then
+		rocket.throttle = 0
+	end
+
+	if key == "1" then
+		rocket.throttle = 1
 	end
 
    --Debug
